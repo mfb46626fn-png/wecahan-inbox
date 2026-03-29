@@ -20,11 +20,14 @@ import { cn, formatDate } from '@/lib/utils'
 import { type Conversation } from '@/hooks/useConversations'
 import { createClient } from '@/lib/supabase/client'
 
+import { useRouter } from 'next/navigation'
+
 interface ConversationDetailsProps {
   conversation?: Conversation
 }
 
 export function ConversationDetails({ conversation }: ConversationDetailsProps) {
+  const router = useRouter()
   const [updating, setUpdating] = useState(false)
   const [localModes, setLocalModes] = useState({
     human_mode: conversation?.human_mode || false,
@@ -49,20 +52,38 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
     if (!conversation || updating) return
 
     const newValue = !localModes[field]
+    const otherField = field === 'human_mode' ? 'ai_enabled' : 'human_mode'
     
-    // OPTIMISTIC UPDATE: Change UI immediately
-    setLocalModes(prev => ({ ...prev, [field]: newValue }))
+    // LOGIC: If we are turning ONE on, the OTHER must go OFF
+    const updates: Record<string, boolean> = { [field]: newValue }
+    if (newValue === true) {
+      updates[otherField] = false
+    }
+    
+    // OPTIMISTIC UPDATE: Change UI immediately for both
+    setLocalModes(prev => ({ 
+      ...prev, 
+      [field]: newValue,
+      [otherField]: newValue === true ? false : prev[otherField]
+    }))
     
     setUpdating(true)
     const { error } = await supabase
       .from('conversations')
-      .update({ [field]: newValue })
+      .update(updates)
       .eq('id', conversation.id)
 
     if (error) {
-      console.error(`Error updating ${field}:`, error)
+      console.error(`Error updating toggles:`, error)
       // Rollback on error
-      setLocalModes(prev => ({ ...prev, [field]: !newValue }))
+      setLocalModes({
+        human_mode: conversation.human_mode,
+        ai_enabled: conversation.ai_enabled,
+        status: conversation.status
+      })
+    } else {
+      // Force a server-side refresh to ensure consistency
+      router.refresh()
     }
     setUpdating(false)
   }

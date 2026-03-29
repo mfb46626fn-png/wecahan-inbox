@@ -1,36 +1,65 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
-import { User, Bell, Search } from 'lucide-react'
+import { Search, Bell, User, Menu } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
 
-export function Topbar() {
-  const pathname = usePathname()
-  const title = pathname.split('/').pop()?.replace(/-/g, ' ') || 'Inbox'
+interface TopbarProps {
+  onMenuClick?: () => void
+}
+
+export function Topbar({ onMenuClick }: TopbarProps) {
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const supabase = createClient()
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      setUserEmail(user?.email || null)
+    }
+    getUser()
+  }, [supabase.auth])
 
   return (
-    <header className="flex h-16 items-center border-b bg-card-foreground/5 dark:bg-card px-8 backdrop-blur-md">
-      <div className="flex flex-1 items-center">
-        <h2 className="text-lg font-semibold capitalize">{title}</h2>
-      </div>
-
+    <header className="flex h-16 items-center justify-between border-b bg-card/50 backdrop-blur-md px-4 md:px-8 shrink-0 relative z-30">
       <div className="flex items-center space-x-4">
-        {/* Search placeholder */}
+        {/* Mobile Menu Trigger */}
+        <button 
+          onClick={onMenuClick}
+          className="lg:hidden p-2 -ml-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground active:scale-90"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search..."
-            className="h-9 w-64 rounded-md border bg-muted/50 pl-9 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            placeholder="Search everything..."
+            className="h-10 w-64 lg:w-96 rounded-full border bg-muted/50 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-all"
           />
         </div>
+      </div>
 
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-md border hover:bg-muted transition-colors">
-          <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-destructive"></span>
+      <div className="flex items-center space-x-3 md:space-x-4">
+        <button className="relative p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+          <Bell className="h-5 w-5" />
+          <span className="absolute right-2 top-2 flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+          </span>
         </button>
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <User className="h-5 w-5" />
+        <div className="flex items-center space-x-3 pl-2 border-l">
+          <div className="text-right hidden sm:block">
+            <p className="text-sm font-bold leading-none">{userEmail?.split('@')[0] || 'User'}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">Administrator</p>
+          </div>
+          <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-primary/20 bg-muted flex items-center justify-center p-0.5 shadow-sm">
+             <div className="h-full w-full rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+               <User className="h-5 w-5 text-primary" />
+             </div>
+          </div>
         </div>
       </div>
     </header>

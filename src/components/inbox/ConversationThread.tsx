@@ -82,7 +82,7 @@ export function ConversationThread({ messages, loading, conversationId }: Conver
                         : "bg-card border rounded-tl-none"
                     )}
                   >
-                    {msg.content_text}
+                    {msg.content_text || <span className="italic opacity-50">Empty message content</span>}
                     
                     <span className={cn(
                       "mt-1 block text-[10px] opacity-70",

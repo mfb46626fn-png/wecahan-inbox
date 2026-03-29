@@ -58,6 +58,22 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
     setUpdating(false)
   }
 
+  const handleDelete = async () => {
+    if (!conversation || updating || !confirm('Are you sure you want to permanently delete this chat? This cannot be undone.')) return
+
+    setUpdating(true)
+    const { error } = await supabase
+      .from('conversations')
+      .delete()
+      .eq('id', conversation.id)
+
+    if (error) {
+      console.error('Error deleting conversation:', error)
+      alert('Failed to delete conversation')
+    }
+    setUpdating(false)
+  }
+
   if (!conversation) {
     return (
       <div className="flex h-full items-center justify-center border-l bg-card text-muted-foreground p-8 text-center text-sm italic">
@@ -67,21 +83,21 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
   }
 
   return (
-    <div className="flex h-full flex-col border-l bg-card overflow-y-auto w-80">
+    <div className="flex h-full flex-col border-l bg-card overflow-y-auto">
       <div className="p-6 border-b">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg tracking-tight">Details</h3>
+          <h3 className="font-bold text-lg tracking-tight text-foreground">Details</h3>
           <button className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors text-muted-foreground">
             <MoreVertical className="h-4 w-4" />
           </button>
         </div>
 
         <div className="flex flex-col items-center text-center space-y-3 mb-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted border-2 border-primary/10 shadow-inner">
-            <User className="h-10 w-10 text-muted-foreground/50" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted border flex-shrink-0">
+            <User className="h-10 w-10 text-muted-foreground/30" />
           </div>
-          <div>
-            <h4 className="font-bold text-lg leading-tight">{conversation.profile_name || 'Unknown Contact'}</h4>
+          <div className="min-w-0 w-full px-2">
+            <h4 className="font-bold text-lg leading-tight truncate text-foreground">{conversation.profile_name || 'Unknown Contact'}</h4>
             <p className="text-sm text-muted-foreground font-mono flex items-center justify-center mt-1">
               <Phone className="h-3 w-3 mr-1.5" />
               {conversation.phone_number}
@@ -92,6 +108,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
         <div className="grid grid-cols-3 gap-2">
           <button 
             onClick={() => updateStatus('open')}
+            disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
               conversation.status === 'open' 
@@ -104,6 +121,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
           </button>
           <button 
             onClick={() => updateStatus('pending')}
+            disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
               conversation.status === 'pending' 
@@ -116,6 +134,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
           </button>
           <button 
             onClick={() => updateStatus('closed')}
+            disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
               conversation.status === 'closed' 
@@ -132,7 +151,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
       <div className="flex-1 px-6 py-6 space-y-8">
         {/* Controls Section */}
         <div className="space-y-4">
-          <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Controls</h5>
+          <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground font-mono">Automation</h5>
           
           <div className="space-y-3">
             <button
@@ -141,15 +160,15 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               className={cn(
                 "flex w-full items-center justify-between rounded-2xl border p-4 transition-all text-left group",
                 conversation.human_mode 
-                  ? "bg-blue-500/5 border-blue-500/30 ring-1 ring-blue-500/10" 
-                  : "bg-muted/20 border-transparent hover:border-muted-foreground/20"
+                  ? "bg-blue-500/5 border-blue-500/40 ring-1 ring-blue-500/10 shadow-sm shadow-blue-500/5" 
+                  : "bg-muted/20 border-transparent hover:border-muted-foreground/20 hover:bg-muted/30"
               )}
             >
               <div className="flex items-center space-x-3">
                 <ShieldCheck className={cn("h-5 w-5", conversation.human_mode ? "text-blue-500" : "text-muted-foreground")} />
                 <div>
-                  <p className="text-sm font-bold">Human Mode</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Disable AI autopiloting</p>
+                  <p className="text-sm font-bold text-foreground">Human Mode</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 font-sans">Disable AI autopiloting</p>
                 </div>
               </div>
               <div className={cn(
@@ -169,15 +188,15 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               className={cn(
                 "flex w-full items-center justify-between rounded-2xl border p-4 transition-all text-left group",
                 conversation.ai_enabled 
-                  ? "bg-violet-500/5 border-violet-500/30 ring-1 ring-violet-500/10" 
-                  : "bg-muted/20 border-transparent hover:border-muted-foreground/20"
+                  ? "bg-violet-500/5 border-violet-500/40 ring-1 ring-violet-500/10 shadow-sm shadow-violet-500/5" 
+                  : "bg-muted/20 border-transparent hover:border-muted-foreground/20 hover:bg-muted/30"
               )}
             >
               <div className="flex items-center space-x-3">
                 <Bot className={cn("h-5 w-5", conversation.ai_enabled ? "text-violet-500" : "text-muted-foreground")} />
                 <div>
-                  <p className="text-sm font-bold">AI Enabled</p>
-                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Allow automated responses</p>
+                  <p className="text-sm font-bold text-foreground">AI Enabled</p>
+                  <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 font-sans">Allow automated responses</p>
                 </div>
               </div>
               <div className={cn(
@@ -195,14 +214,14 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
 
         {/* Info Section */}
         <div className="space-y-4 pt-4 border-t">
-          <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Properties</h5>
+          <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground font-mono">Properties</h5>
           
           <div className="space-y-4">
             <div className="flex items-center text-sm group">
               <UserPlus className="h-4 w-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground mb-0.5">Assigned To</p>
-                <button className="font-medium hover:underline decoration-dotted underline-offset-4">
+                <button className="font-medium hover:underline decoration-dotted underline-offset-4 text-foreground/80 font-sans">
                   {conversation.assigned_to || 'Unassigned'}
                 </button>
               </div>
@@ -211,8 +230,8 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
             <div className="flex items-center text-sm group">
               <Calendar className="h-4 w-4 mr-3 text-muted-foreground group-hover:text-primary transition-colors" />
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground mb-0.5">Created At</p>
-                <p className="font-medium">{formatDate(conversation.created_at)}</p>
+                <p className="text-xs text-muted-foreground mb-0.5 font-mono">Created At</p>
+                <p className="font-medium text-foreground/80 lowercase">{formatDate(conversation.created_at)}</p>
               </div>
             </div>
 
@@ -221,8 +240,8 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               <div className="flex-1">
                 <p className="text-xs text-muted-foreground mb-1">Tags</p>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full bg-muted border text-[10px] font-bold">Inquiry</span>
-                  <button className="px-2 py-0.5 rounded-full border border-dashed text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground transition-all">+ Add Tag</button>
+                  <span className="px-2 py-0.5 rounded-md bg-muted border text-[9px] font-bold tracking-tight uppercase">Inquiry</span>
+                  <button className="px-2 py-0.5 rounded-md border border-dashed border-muted-foreground/30 text-[9px] text-muted-foreground hover:bg-muted hover:text-foreground transition-all">+ Add Tag</button>
                 </div>
               </div>
             </div>
@@ -230,8 +249,8 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
             <div className="flex items-start text-sm group">
               <StickyNote className="h-4 w-4 mr-3 mt-1 text-muted-foreground group-hover:text-primary transition-colors" />
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground mb-1">Internal Notes</p>
-                <button className="w-full text-left p-3 rounded-xl bg-muted/30 border border-transparent hover:border-muted-foreground/20 text-[11px] text-muted-foreground italic leading-relaxed transition-all">
+                <p className="text-xs text-muted-foreground mb-1 text-foreground/60">Internal Notes</p>
+                <button className="w-full text-left p-3 rounded-xl bg-muted/30 border border-transparent hover:border-muted-foreground/10 text-[11px] text-muted-foreground/80 italic leading-relaxed transition-all font-sans">
                   {conversation.notes || 'No private notes yet. Click to add...'}
                 </button>
               </div>
@@ -241,7 +260,11 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
       </div>
 
       <div className="p-6 border-t mt-auto">
-        <button className="flex w-full items-center justify-center space-x-2 rounded-xl border-2 border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive transition-all hover:bg-destructive hover:text-destructive-foreground hover:border-destructive">
+        <button 
+          onClick={handleDelete}
+          disabled={updating}
+          className="flex w-full items-center justify-center space-x-2 rounded-xl border-2 border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-bold text-destructive transition-all hover:bg-destructive hover:text-destructive-foreground hover:border-destructive active:scale-95 disabled:opacity-50"
+        >
           <Trash2 className="h-4 w-4" />
           <span>Permanently Delete Chat</span>
         </button>

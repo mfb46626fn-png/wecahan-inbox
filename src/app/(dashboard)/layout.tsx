@@ -12,7 +12,22 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
+
+  // Load sidebar state from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar_collapsed')
+    if (saved === 'true') setIsCollapsed(true)
+  }, [])
+
+  const toggleCollapse = () => {
+    setIsCollapsed(prev => {
+      const newState = !prev
+      localStorage.setItem('sidebar_collapsed', String(newState))
+      return newState
+    })
+  }
 
   // Close sidebar on navigation on mobile
   useEffect(() => {
@@ -20,7 +35,7 @@ export default function DashboardLayout({
   }, [pathname])
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden relative">
+    <div className="flex h-screen bg-background overflow-hidden relative font-sans tracking-tight">
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div 
@@ -29,12 +44,17 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar Container */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 lg:relative lg:z-auto lg:w-64 transform transition-transform duration-300 ease-in-out lg:translate-x-0 bg-card border-r shadow-2xl lg:shadow-none",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed inset-y-0 left-0 z-50 transform transition-all duration-300 ease-in-out lg:relative lg:translate-x-0 bg-card border-r shadow-2xl lg:shadow-none",
+        sidebarOpen ? "translate-x-0 w-72" : "-translate-x-full lg:translate-x-0",
+        !sidebarOpen && (isCollapsed ? "lg:w-20" : "lg:w-64")
       )}>
-        <AppSidebar onClose={() => setSidebarOpen(false)} />
+        <AppSidebar 
+          onClose={() => setSidebarOpen(false)} 
+          isCollapsed={isCollapsed}
+          onToggleCollapse={toggleCollapse}
+        />
       </div>
 
       {/* Main Content Area */}
@@ -42,8 +62,8 @@ export default function DashboardLayout({
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
         
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-8 md:py-6">
-          <div className="mx-auto max-w-7xl h-full">
+        <main className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6">
+          <div className="mx-auto max-w-[1600px] h-full">
             {children}
           </div>
         </main>

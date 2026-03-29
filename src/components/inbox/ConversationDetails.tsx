@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   User, 
   Phone, 
@@ -26,25 +26,52 @@ interface ConversationDetailsProps {
 
 export function ConversationDetails({ conversation }: ConversationDetailsProps) {
   const [updating, setUpdating] = useState(false)
+  const [localModes, setLocalModes] = useState({
+    human_mode: conversation?.human_mode || false,
+    ai_enabled: conversation?.ai_enabled ?? true,
+    status: conversation?.status || 'open'
+  })
+  
   const supabase = createClient()
+
+  // Sync local state when conversation prop changes (from Realtime)
+  useEffect(() => {
+    if (conversation) {
+      setLocalModes({
+        human_mode: conversation.human_mode,
+        ai_enabled: conversation.ai_enabled,
+        status: conversation.status
+      })
+    }
+  }, [conversation])
 
   const toggleField = async (field: 'human_mode' | 'ai_enabled') => {
     if (!conversation || updating) return
 
+    const newValue = !localModes[field]
+    
+    // OPTIMISTIC UPDATE: Change UI immediately
+    setLocalModes(prev => ({ ...prev, [field]: newValue }))
+    
     setUpdating(true)
     const { error } = await supabase
       .from('conversations')
-      .update({ [field]: !conversation[field] })
+      .update({ [field]: newValue })
       .eq('id', conversation.id)
 
     if (error) {
       console.error(`Error updating ${field}:`, error)
+      // Rollback on error
+      setLocalModes(prev => ({ ...prev, [field]: !newValue }))
     }
     setUpdating(false)
   }
 
   const updateStatus = async (status: 'open' | 'pending' | 'closed') => {
     if (!conversation || updating) return
+
+    // OPTIMISTIC UPDATE
+    setLocalModes(prev => ({ ...prev, status }))
 
     setUpdating(true)
     const { error } = await supabase
@@ -54,6 +81,8 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
 
     if (error) {
       console.error('Error updating status:', error)
+      // Rollback on error
+      setLocalModes(prev => ({ ...prev, status: conversation.status }))
     }
     setUpdating(false)
   }
@@ -111,7 +140,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
             disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
-              conversation.status === 'open' 
+              localModes.status === 'open' 
                 ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" 
                 : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted"
             )}
@@ -124,7 +153,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
             disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
-              conversation.status === 'pending' 
+              localModes.status === 'pending' 
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-500" 
                 : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted"
             )}
@@ -137,7 +166,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
             disabled={updating}
             className={cn(
               "flex flex-col items-center justify-center py-2.5 rounded-xl border transition-all",
-              conversation.status === 'closed' 
+              localModes.status === 'closed' 
                 ? "bg-muted border-muted-foreground/30 text-foreground" 
                 : "bg-muted/30 border-transparent text-muted-foreground hover:bg-muted"
             )}
@@ -149,7 +178,7 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
       </div>
 
       <div className="flex-1 px-6 py-6 space-y-8">
-        {/* Controls Section */}
+        {/* Automation Section */}
         <div className="space-y-4">
           <h5 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground font-mono">Automation</h5>
           
@@ -159,13 +188,13 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               disabled={updating}
               className={cn(
                 "flex w-full items-center justify-between rounded-2xl border p-4 transition-all text-left group",
-                conversation.human_mode 
+                localModes.human_mode 
                   ? "bg-blue-500/5 border-blue-500/40 ring-1 ring-blue-500/10 shadow-sm shadow-blue-500/5" 
                   : "bg-muted/20 border-transparent hover:border-muted-foreground/20 hover:bg-muted/30"
               )}
             >
               <div className="flex items-center space-x-3">
-                <ShieldCheck className={cn("h-5 w-5", conversation.human_mode ? "text-blue-500" : "text-muted-foreground")} />
+                <ShieldCheck className={cn("h-5 w-5", localModes.human_mode ? "text-blue-500" : "text-muted-foreground")} />
                 <div>
                   <p className="text-sm font-bold text-foreground">Human Mode</p>
                   <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 font-sans">Disable AI autopiloting</p>
@@ -173,11 +202,11 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               </div>
               <div className={cn(
                 "h-5 w-10 rounded-full border p-0.5 transition-all relative",
-                conversation.human_mode ? "bg-blue-500 border-blue-600" : "bg-muted border-muted-foreground/20"
+                localModes.human_mode ? "bg-blue-500 border-blue-600" : "bg-muted border-muted-foreground/20"
               )}>
                 <div className={cn(
                   "h-full aspect-square rounded-full bg-white shadow-sm transition-all",
-                  conversation.human_mode ? "translate-x-5" : "translate-x-0"
+                  localModes.human_mode ? "translate-x-5" : "translate-x-0"
                 )} />
               </div>
             </button>
@@ -187,13 +216,13 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               disabled={updating}
               className={cn(
                 "flex w-full items-center justify-between rounded-2xl border p-4 transition-all text-left group",
-                conversation.ai_enabled 
+                localModes.ai_enabled 
                   ? "bg-violet-500/5 border-violet-500/40 ring-1 ring-violet-500/10 shadow-sm shadow-violet-500/5" 
                   : "bg-muted/20 border-transparent hover:border-muted-foreground/20 hover:bg-muted/30"
               )}
             >
               <div className="flex items-center space-x-3">
-                <Bot className={cn("h-5 w-5", conversation.ai_enabled ? "text-violet-500" : "text-muted-foreground")} />
+                <Bot className={cn("h-5 w-5", localModes.ai_enabled ? "text-violet-500" : "text-muted-foreground")} />
                 <div>
                   <p className="text-sm font-bold text-foreground">AI Enabled</p>
                   <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 font-sans">Allow automated responses</p>
@@ -201,11 +230,11 @@ export function ConversationDetails({ conversation }: ConversationDetailsProps) 
               </div>
               <div className={cn(
                 "h-5 w-10 rounded-full border p-0.5 transition-all relative",
-                conversation.ai_enabled ? "bg-violet-500 border-violet-600" : "bg-muted border-muted-foreground/20"
+                localModes.ai_enabled ? "bg-violet-500 border-violet-600" : "bg-muted border-muted-foreground/20"
               )}>
                 <div className={cn(
                   "h-full aspect-square rounded-full bg-white shadow-sm transition-all",
-                  conversation.ai_enabled ? "translate-x-5" : "translate-x-0"
+                  localModes.ai_enabled ? "translate-x-5" : "translate-x-0"
                 )} />
               </div>
             </button>

@@ -76,7 +76,12 @@ export async function POST(req: Request) {
 
     if (msgError) {
       console.error('DB Insert Error:', msgError)
-      return NextResponse.json({ error: 'Failed to log message' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to log message', 
+        details: msgError.message,
+        hint: msgError.hint,
+        code: msgError.code
+      }, { status: 500 })
     }
 
     // 4. Update conversation metadata

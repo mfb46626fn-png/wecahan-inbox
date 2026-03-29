@@ -44,6 +44,9 @@ export default function InboxPage() {
       const data = await response.json()
       throw new Error(data.error || 'Failed to send message')
     }
+
+    // Optional: If realtime is slow, we could manually fetch or use optimistic UI here.
+    // For now, let's keep it clean since useMessages handles the subscription.
   }
 
   return (

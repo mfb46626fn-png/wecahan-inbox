@@ -59,12 +59,21 @@ export function useMessages(conversationId?: string) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          if (!ignore) {
-            setMessages((prev) => [...prev, payload.new as Message])
+          if (!ignore && payload.new) {
+            console.log('Realtime message received:', payload.new)
+            setMessages((prev) => {
+              // Avoid duplicates if optimistic update already added it
+              if (prev.some(m => m.id === payload.new.id)) return prev
+              return [...prev, payload.new as Message]
+            })
           }
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`Realtime subscribed for messages in ${conversationId}`)
+        }
+      })
 
     return () => {
       ignore = true

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 0o1 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { conversationId, text } = await req.json()
@@ -89,13 +89,17 @@ export async function POST(req: Request) {
       })
       .eq('id', conversationId)
 
-    // 5. Log event
-    await supabase.from('conversation_events').insert({
-      conversation_id: conversationId,
-      event_type: 'message_sent',
-      actor_id: user.id,
-      payload: { message_id: message.id },
-    })
+    // 5. Log event (Safely)
+    try {
+      await supabase.from('conversation_events').insert({
+        conversation_id: conversationId,
+        event_type: 'message_sent',
+        actor_id: user.id,
+        payload: { message_id: message.id },
+      })
+    } catch (e) {
+      console.warn('Optional: failed to log conversation_event', e)
+    }
 
     return NextResponse.json({ success: true, message })
   } catch (error) {

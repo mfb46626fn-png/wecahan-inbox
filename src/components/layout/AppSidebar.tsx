@@ -11,7 +11,8 @@ import {
   ChevronRight,
   X,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Calendar
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +20,7 @@ import { useRouter } from 'next/navigation'
 
 const menuItems = [
   { icon: Inbox, label: 'Inbox', href: '/inbox' },
+  { icon: Calendar, label: 'Appointments', href: '/appointments' },
   { icon: Users, label: 'Team', href: '/team' },
   { icon: MessageSquareQuote, label: 'Quick Replies', href: '/quick-replies' },
   { icon: Settings, label: 'Settings', href: '/settings' },

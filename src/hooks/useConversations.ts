@@ -18,6 +18,9 @@ export type Conversation = {
   updated_at: string
   created_at: string
   notes: string | null
+  appointment_status: 'none' | 'requested' | 'confirmed' | 'cancelled' | 'attended' | 'no_show'
+  appointment_requested_at: string | null
+  appointment_notes: string | null
 }
 
 export function useConversations() {

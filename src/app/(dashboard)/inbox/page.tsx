@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ConversationList } from '@/components/inbox/ConversationList'
 import { ConversationThread } from '@/components/inbox/ConversationThread'
 import { ConversationDetails } from '@/components/inbox/ConversationDetails'
@@ -11,12 +12,25 @@ import { cn } from '@/lib/utils'
 import { ChevronLeft, Info } from 'lucide-react'
 
 export default function InboxPage() {
-  const [selectedId, setSelectedId] = useState<string | undefined>()
-  const [mobileView, setMobileView] = useState<'list' | 'chat' | 'details'>('list')
+  const searchParams = useSearchParams()
+  const initialId = searchParams.get('id')
+  const [selectedId, setSelectedId] = useState<string | undefined>(initialId || undefined)
+  const [mobileView, setMobileView] = useState<'list' | 'chat' | 'details'>(initialId ? 'chat' : 'list')
   const { conversations, loading: convLoading } = useConversations()
   const { messages, loading: msgLoading } = useMessages(selectedId)
 
   const selectedConversation = conversations.find(c => c.id === selectedId)
+
+  // Sync selectedId with query param if it changes
+  useEffect(() => {
+    const id = searchParams.get('id')
+    if (id) {
+      setSelectedId(id)
+      if (window.innerWidth < 1024) {
+        setMobileView('chat')
+      }
+    }
+  }, [searchParams])
 
   // Handle selection on mobile
   const handleSelect = (id: string) => {

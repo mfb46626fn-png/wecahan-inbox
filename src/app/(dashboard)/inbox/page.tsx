@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { ConversationList } from '@/components/inbox/ConversationList'
 import { ConversationThread } from '@/components/inbox/ConversationThread'
@@ -11,7 +11,7 @@ import { useMessages } from '@/hooks/useMessages'
 import { cn } from '@/lib/utils'
 import { ChevronLeft, Info } from 'lucide-react'
 
-export default function InboxPage() {
+function InboxContent() {
   const searchParams = useSearchParams()
   const initialId = searchParams.get('id')
   const [selectedId, setSelectedId] = useState<string | undefined>(initialId || undefined)
@@ -142,5 +142,17 @@ export default function InboxPage() {
         <ConversationDetails conversation={selectedConversation} />
       </div>
     </div>
+  )
+}
+
+export default function InboxPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <InboxContent />
+    </Suspense>
   )
 }

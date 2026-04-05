@@ -5,9 +5,6 @@ import { usePathname } from 'next/navigation'
 import { 
   Inbox, 
   Users, 
-  MessageSquareQuote, 
-  Settings, 
-  LogOut,
   ChevronRight,
   X,
   PanelLeftClose,
@@ -22,8 +19,6 @@ const menuItems = [
   { icon: Inbox, label: 'Inbox', href: '/inbox' },
   { icon: Calendar, label: 'Appointments', href: '/appointments' },
   { icon: Users, label: 'Team', href: '/team' },
-  { icon: MessageSquareQuote, label: 'Quick Replies', href: '/quick-replies' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
 ]
 
 interface AppSidebarProps {
@@ -34,14 +29,6 @@ interface AppSidebarProps {
 
 export function AppSidebar({ onClose, isCollapsed, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
-  const supabase = createClient()
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-    router.refresh()
-  }
 
   return (
     <div className="flex h-full w-full flex-col bg-card font-sans shadow-2xl lg:shadow-none transition-all duration-300">
@@ -103,28 +90,11 @@ export function AppSidebar({ onClose, isCollapsed, onToggleCollapse }: AppSideba
         })}
       </nav>
 
-      <div className={cn(
-        "border-t bg-muted/5 transition-all duration-300",
-        isCollapsed ? "p-3 py-6" : "p-6"
-      )}>
-        <button
-          onClick={handleLogout}
-          title={isCollapsed ? "Logout" : undefined}
-          className={cn(
-            "flex items-center justify-center rounded-2xl bg-destructive/10 text-destructive transition-all duration-300 hover:bg-destructive hover:text-destructive-foreground active:scale-95 shadow-sm",
-            isCollapsed ? "h-12 w-12 mx-auto" : "w-full px-4 py-3 text-sm font-bold"
-          )}
-        >
-          <LogOut className={cn("transition-all", isCollapsed ? "h-6 w-6" : "mr-3 h-5 w-5")} />
-          {!isCollapsed && <span>Logout</span>}
-        </button>
-        
-        {!isCollapsed && (
-          <div className="mt-4 flex flex-col items-center opacity-40">
-            <p className="text-[9px] font-mono uppercase tracking-[0.3em]">v1.2.0-prod</p>
-          </div>
-        )}
-      </div>
+      {!isCollapsed && (
+        <div className="border-t p-6 flex flex-col items-center opacity-40">
+          <p className="text-[9px] font-mono uppercase tracking-[0.3em]">v1.3.0-prod</p>
+        </div>
+      )}
     </div>
   )
 }

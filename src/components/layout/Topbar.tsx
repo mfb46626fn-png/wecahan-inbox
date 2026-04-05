@@ -1,8 +1,9 @@
 'use client'
 
-import { Search, Bell, User, Menu } from 'lucide-react'
+import { Search, Bell, User, Menu, LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface TopbarProps {
   onMenuClick?: () => void
@@ -11,6 +12,13 @@ interface TopbarProps {
 export function Topbar({ onMenuClick }: TopbarProps) {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const supabase = createClient()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
+    router.refresh()
+  }
 
   useEffect(() => {
     const getUser = async () => {
@@ -60,6 +68,14 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                <User className="h-5 w-5 text-primary" />
              </div>
           </div>
+          
+          <button 
+            onClick={handleLogout}
+            title="Çıkış Yap"
+            className="ml-2 flex items-center justify-center p-2 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all active:scale-95 shadow-sm border border-red-500/20"
+          >
+            <LogOut className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </header>

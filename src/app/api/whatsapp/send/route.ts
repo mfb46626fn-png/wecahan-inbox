@@ -1,6 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+async function getSettingOrEnv(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  category: string,
+  key: string,
+  envKey: string
+): Promise<string | undefined> {
+  const { data } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('category', category)
+    .eq('key', key)
+    .single()
+
+  if (data?.value) return data.value
+  return process.env[envKey] || undefined
+}
+
 export async function POST(req: Request) {
   try {
     const supabase = await createClient()
@@ -27,10 +44,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
     }
 
-    // 2. Call WhatsApp Cloud API
-    const whatsappToken = process.env.WHATSAPP_ACCESS_TOKEN
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
-    const apiVersion = process.env.WHATSAPP_API_VERSION || 'v20.0'
+    // 2. Call WhatsApp Cloud API (DB settings take priority over env vars)
+    const whatsappToken = await getSettingOrEnv(supabase, 'whatsapp', 'access_token', 'WHATSAPP_ACCESS_TOKEN')
+    const phoneNumberId = await getSettingOrEnv(supabase, 'whatsapp', 'phone_number_id', 'WHATSAPP_PHONE_NUMBER_ID')
+    const apiVersion = await getSettingOrEnv(supabase, 'whatsapp', 'api_version', 'WHATSAPP_API_VERSION') || 'v20.0'
+
 
     const waResponse = await fetch(
       `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
